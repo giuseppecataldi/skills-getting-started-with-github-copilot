@@ -3,6 +3,11 @@ description: Orchestrate specialized Copilot sub-agents to analyze a database ta
 on:
   workflow_dispatch:
     inputs:
+      ddl_path:
+        description: Path to the SQL DDL file describing the table schema
+        required: false
+        type: string
+        default: schema/example_table.sql
       table_name:
         description: Name of the database table used to generate the CRUD
         required: true
@@ -136,6 +141,7 @@ The expected result should include, when applicable:
 9. If `${{ github.event.inputs.execution_mode }}` is `final`, create a PR only after implementation, validation, and review are internally consistent.
 10. If you cannot safely produce a code change, create one issue describing the blocker, recommended next step, and missing context.
 11. If no action is needed after analysis, call `noop` with a precise explanation.
+12. If `${{ github.event.inputs.execution_mode }}` is `draft` and the implementation or tests are generated successfully, create a pull request even if runtime validation cannot be completed because of sandbox network restrictions. Clearly document the validation blocker in the PR description.
 
 ### Security Rules
 
@@ -163,6 +169,11 @@ If you create a pull request, the description must include:
 - Review outcome
 - Residual risks or assumptions
 
+If validation could not be completed because Maven Central or external dependency resolution is blocked, the PR must still be created in draft mode and must clearly state:
+
+- the validation command attempted
+- the reason validation could not complete
+- that generated sources are syntactically prepared but not runtime-verified
 ---
 
 ## agent: `database-analyzer`
@@ -205,7 +216,7 @@ Your output must contain:
 
 Rules:
 
-- If database access is not available from the GitHub runner, do not fail blindly.
+- If database access is not available from the GitHub runner, read the DDL from schema/example_table.sql.
 - If the schema cannot be inspected directly, use repository migrations or ask for a DDL/schema dump.
 - Do not modify files.
 - Do not generate CRUD code.
