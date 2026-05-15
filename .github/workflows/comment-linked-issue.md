@@ -1,6 +1,6 @@
 ---
-name: Comment Linked Issue
-description: Commenta automaticamente una GitHub Issue quando il commit contiene un riferimento tipo #1.
+name: Commento Automatico Issue
+description: Workflow agentico che commenta automaticamente una GitHub Issue quando una commit contiene un riferimento ad una issue.
 on: push
 
 permissions:
@@ -18,29 +18,25 @@ safe-outputs:
 timeout-minutes: 5
 ---
 
-# Comment Linked Issue Agent
+# Agente Commento Issue
 
-You are an agentic workflow that runs whenever a commit is pushed.
+## Ruolo
 
-## Context
+Sei un workflow agentico DevOps eseguito automaticamente ad ogni push sul repository.
 
-The pushed commit SHA is:
+---
 
-`${{ github.event.head_commit.id }}`
+# Trigger
 
-The repository is:
+Il workflow viene triggerato automaticamente quando viene effettuato un push sul repository GitHub.
 
-`${{ github.repository }}`
+---
 
-The GitHub server URL is:
+# Obiettivo
 
-`${{ github.server_url }}`
+Analizzare la commit pushata e verificare se il messaggio della commit contiene un riferimento ad una GitHub Issue.
 
-## Goal
-
-Analyze the pushed commit and determine whether its commit message references a GitHub Issue.
-
-A valid issue reference is any GitHub issue number written as:
+Esempi validi:
 
 - `#1`
 - `refs #1`
@@ -48,20 +44,57 @@ A valid issue reference is any GitHub issue number written as:
 - `closes #1`
 - `resolves #1`
 
-## Instructions
+---
 
-1. Inspect the commit identified by the provided commit SHA.
-2. Read the commit message.
-3. Extract the first issue number in the format `#number`.
-4. If no issue number is present, do nothing.
-5. If an issue number is present, add a comment to that issue.
+# Context disponibile
 
-## Comment format
+Repository corrente:
 
-Add this comment to the linked issue:
+`${{ github.repository }}`
+
+SHA della commit:
+
+`${{ github.event.head_commit.id }}`
+
+Server GitHub:
+
+`${{ github.server_url }}`
+
+---
+
+# Istruzioni operative
+
+1. Analizza la commit identificata dallo SHA disponibile.
+2. Leggi il messaggio della commit.
+3. Cerca il primo riferimento ad una issue nel formato `#numero`.
+4. Se non viene trovata alcuna issue:
+   - termina senza effettuare operazioni.
+5. Se viene trovata una issue:
+   - aggiungi automaticamente un commento alla issue.
+
+---
+
+# Sicurezza Output (Output Security)
+
+Il workflow può effettuare esclusivamente l'output sicuro `add-comment`.
+
+Non sono consentite operazioni come:
+
+- creazione issue
+- chiusura issue
+- modifica label
+- modifica titolo
+- modifica milestone
+- cancellazione contenuti
+
+---
+
+# Formato commento
+
+Il commento deve contenere:
 
 ```text
-🤖 Agentic workflow detected a commit linked to this issue.
+🤖 Workflow agentico eseguito correttamente.
 
-Commit:
+Commit collegata:
 https://github.com/${{ github.repository }}/commit/${{ github.event.head_commit.id }}
