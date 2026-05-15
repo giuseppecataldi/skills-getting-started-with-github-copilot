@@ -1,0 +1,92 @@
+name: Comment linked issue
+
+on:
+  push:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  comment-linked-issue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Comment linked GitHub issues
+        uses: actions/github-script@v7
+        env:
+          COMMITS_JSON: ${{ toJson(github.event.commits) }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+          script: |
+            const commits = JSON.parse(process.env.COMMITS_JSON || '[]');
+
+            const owner = process.env.REPOSITORY_OWNER;
+            const repo = process.env.REPOSITORY.split('/')[1];
+
+            if (!Array.isArray(commits) || commits.length === 0) {
+              core.info('No commits found in push payload.');
+              return;
+            }
+
+            // Match:
+            // #1
+            // refs #1
+            // fixes #1
+            // closes #1
+            // resolves #1
+            const issuePattern =
+              /(?:\b(?:fixe?[sd]?|close[sd]?|resolve[sd]?|refs?)\s+)?#(\d+)\b/gi;
+
+            const issueCommitPairs = new Map();
+
+            for (const commit of commits) {
+              const message = commit.message || '';
+
+              const matches = [...message.matchAll(issuePattern)];
+
+              for (const match of matches) {
+                const issueNumber = Number(match[1]);
+
+                if (!issueCommitPairs.has(issueNumber)) {
+                  issueCommitPairs.set(issueNumber, []);
+                }
+
+                issueCommitPairs.get(issueNumber).push({
+                  message,
+                  url: commit.url,
+                  id: commit.id
+                });
+              }
+            }
+
+            if (issueCommitPairs.size === 0) {
+              core.info('No linked issues found.');
+              return;
+            }
+
+            for (const [issueNumber, linkedCommits] of issueCommitPairs.entries()) {
+
+              const commitList = linkedCommits
+                .map(commit => `- ${commit.url}`)
+                .join('\n');
+
+              const body = `🤖 Workflow automatico eseguito.
+
+            Ho rilevato una o più commit collegate a questa issue:
+
+            ${commitList}`;
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body
+              });
+
+              core.info(`Comment added to issue #${issueNumber}`);
+            }
