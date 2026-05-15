@@ -140,8 +140,14 @@ The expected result should include, when applicable:
 8. If `${{ github.event.inputs.execution_mode }}` is `draft`, create a PR that clearly marks open assumptions and follow-ups.
 9. If `${{ github.event.inputs.execution_mode }}` is `final`, create a PR only after implementation, validation, and review are internally consistent.
 10. If you cannot safely produce a code change, create one issue describing the blocker, recommended next step, and missing context.
-11. If no action is needed after analysis, call `noop` with a precise explanation.
-12. If `${{ github.event.inputs.execution_mode }}` is `draft` and the implementation or tests are generated successfully, create a pull request even if runtime validation cannot be completed because of sandbox network restrictions. Clearly document the validation blocker in the PR description.
+11. `noop` is allowed only when the workflow determines that no code change is required or no files were generated. Do not use `noop` after creating or modifying files.
+12. If no repository change is needed after analysis, call `noop` with a precise explanation.
+13. If `${{ github.event.inputs.execution_mode }}` is `draft` and the implementation or tests are generated successfully, create a pull request even if runtime validation cannot be completed because of sandbox network restrictions. Clearly document the validation blocker in the PR description.
+14. If files were created or modified successfully, do not call `noop`.
+15. If `${{ github.event.inputs.execution_mode }}` is `draft`, create a pull request even when the validation command cannot be completed because of sandbox network restrictions, Maven Central 403, blocked dependency resolution, or missing external network access.
+16. In draft mode, failed or blocked validation is not a blocker for pull request creation if the generated source files and tests are complete.
+17. When validation is blocked by the sandbox, clearly document the blocker in the pull request description instead of using `noop`.
+18. Use `noop` only when no repository change is needed or when no files were created or modified.
 
 ### Security Rules
 
@@ -173,7 +179,8 @@ If validation could not be completed because Maven Central or external dependenc
 
 - the validation command attempted
 - the reason validation could not complete
-- that generated sources are syntactically prepared but not runtime-verified
+- that the generated files were created but not runtime-verified
+- that validation must be executed again in a normal development environment
 ---
 
 ## agent: `database-analyzer`
